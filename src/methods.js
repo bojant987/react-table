@@ -29,8 +29,7 @@ export default Base =>
             overflowX: 'hidden',
             overflowY: 'scroll',
             WebkitOverflowScrolling: 'touch'
-          },
-          this.computedProps.styles.scrollableStyle || {}
+          }, this.computedProps.styles.scrollableStyle || {}
         )
       }
 

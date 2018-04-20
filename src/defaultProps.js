@@ -8,6 +8,7 @@ const emptyObj = () => ({})
 
 export default {
   // General
+  styles: {},
   data: [],
   loading: false,
   showPagination: true,

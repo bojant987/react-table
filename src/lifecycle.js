@@ -10,13 +10,14 @@ export default Base =>
 
     componentWillReceiveProps (nextProps, nextState) {
       const oldState = this.getResolvedState()
-      const newState = this.getResolvedState(nextProps, nextState)
-
       let nextInternalState = this.recomputeInternalStateFromProps(nextProps) //
-
+      const newState = {
+        ...this.getResolvedState(nextProps, nextState),
+        ...nextInternalState.newState,
+      }
       this.computedProps = nextInternalState.computedProps //
       this.utils = nextInternalState.utils //
-      this.setState(nextInternalState.newState) //
+      // this.setState(nextInternalState.newState) //
 
       // Do a deep compare of new and old `defaultOption` and
       // if they are different reset `option = defaultOption`
@@ -48,7 +49,9 @@ export default Base =>
         oldState.columns !== newState.columns ||
         oldState.pivotBy !== newState.pivotBy ||
         oldState.sorted !== newState.sorted ||
-        oldState.filtered !== newState.filtered
+        oldState.filtered !== newState.filtered ||
+        oldState.displayIndexStart !== newState.displayIndexStart ||
+        oldState.displayIndexEnd !== newState.displayIndexEnd
       ) {
         this.setStateWithData(this.getDataModel(newState))
       }
