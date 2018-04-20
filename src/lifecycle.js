@@ -12,6 +12,12 @@ export default Base =>
       const oldState = this.getResolvedState()
       const newState = this.getResolvedState(nextProps, nextState)
 
+      let nextInternalState = this.recomputeInternalStateFromProps(nextProps) //
+
+      this.computedProps = nextInternalState.computedProps //
+      this.utils = nextInternalState.utils //
+      this.setState(nextInternalState.newState) //
+
       // Do a deep compare of new and old `defaultOption` and
       // if they are different reset `option = defaultOption`
       const defaultableOptions = ['sorted', 'filtered', 'resized', 'expanded']

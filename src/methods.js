@@ -1,8 +1,106 @@
 import React from 'react'
 import _ from './utils'
+import infiniteHelpers from './lazyLoad/utils/infiniteHelpers'
+
+const timeScrollStateLastsForAfterUserScrolls = 150
 
 export default Base =>
   class extends Base {
+    generateComputedUtilityFunctions () { //
+      let utilities = {}
+
+      utilities.nodeScrollListener = this.infiniteHandleScroll
+      utilities.getScrollTop = () => {
+        return this.scrollable ? this.scrollable.scrollTop : 0
+      }
+
+      utilities.setScrollTop = top => {
+        if (this.scrollable) {
+          this.scrollable.scrollTop = top
+        }
+      }
+      utilities.scrollShouldBeIgnored = event => event.target !== this.scrollable
+
+      utilities.buildScrollableStyle = () => {
+        return Object.assign(
+          {},
+          {
+            height: this.computedProps.containerHeight,
+            overflowX: 'hidden',
+            overflowY: 'scroll',
+            WebkitOverflowScrolling: 'touch'
+          },
+          this.computedProps.styles.scrollableStyle || {}
+        )
+      }
+
+      return utilities
+    }
+
+    recomputeInternalStateFromProps (props) { //
+      let computedProps = infiniteHelpers.generateComputedProps(props)
+      let utils = this.generateComputedUtilityFunctions()
+
+      let newState = {}
+
+      newState.dataLength = computedProps.data.length
+      newState.infiniteComputer = infiniteHelpers.createInfiniteComputer(
+        computedProps.elementHeight,
+        computedProps.data
+      )
+
+      newState.preloadBatchSize = computedProps.preloadBatchSize
+      newState.preloadAdditionalHeight = computedProps.preloadAdditionalHeight
+
+      newState = Object.assign(
+        newState,
+        infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(newState, utils.getScrollTop())
+      )
+
+      return {
+        computedProps,
+        utils,
+        newState
+      }
+    }
+
+    infiniteHandleScroll (e) { //
+      if (this.utils.scrollShouldBeIgnored(e)) {
+        return
+      }
+
+      this.handleScroll(this.utils.getScrollTop())
+    }
+
+    manageScrollTimeouts () {
+      // Maintains a series of timeouts to set this.state.isScrolling
+      // to be true when the element is scrolling.
+
+      if (this.state.scrollTimeout) {
+        clearTimeout(this.state.scrollTimeout)
+      }
+
+      let that = this
+      let scrollTimeout = setTimeout(() => {
+        that.setState({
+          isScrolling: false,
+          scrollTimeout: undefined
+        })
+      }, timeScrollStateLastsForAfterUserScrolls)
+
+      this.setState({
+        isScrolling: true,
+        scrollTimeout: scrollTimeout
+      })
+    }
+    handleScroll (scrollTop) {
+      this.manageScrollTimeouts();
+
+      let newApertureState = infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(this.state, scrollTop)
+      // this.props.onVisibleChange(newApertureState);
+      this.setState(Object.assign({}, newApertureState))
+    };
+
     getResolvedState (props, state) {
       const resolvedState = {
         ..._.compactObject(this.state),
@@ -49,7 +147,7 @@ export default Base =>
 
       // If we have SubComponent's we need to make sure we have an expander column
       if (SubComponent && !expanderColumn) {
-        expanderColumn = { expander: true }
+        expanderColumn = {expander: true}
         columnsWithExpander = [expanderColumn, ...columnsWithExpander]
       }
 
@@ -142,8 +240,8 @@ export default Base =>
           column.columns
             ? column.columns.length
             : pivotBy.indexOf(column.id) > -1
-              ? false
-              : _.getFirstDefined(column.show, true)
+            ? false
+            : _.getFirstDefined(column.show, true)
       )
 
       // Find any custom pivot location
@@ -419,9 +517,9 @@ export default Base =>
 
     // User actions
     onPageChange (page) {
-      const { onPageChange, collapseOnPageChange } = this.props
+      const {onPageChange, collapseOnPageChange} = this.props
 
-      const newState = { page }
+      const newState = {page}
       if (collapseOnPageChange) {
         newState.expanded = {}
       }
@@ -429,8 +527,8 @@ export default Base =>
     }
 
     onPageSizeChange (newPageSize) {
-      const { onPageSizeChange } = this.props
-      const { pageSize, page } = this.getResolvedState()
+      const {onPageSizeChange} = this.props
+      const {pageSize, page} = this.getResolvedState()
 
       // Normalize the page to display
       const currentRow = pageSize * page
@@ -446,7 +544,7 @@ export default Base =>
     }
 
     sortColumn (column, additive) {
-      const { sorted, skipNextSort, defaultSortDesc } = this.getResolvedState()
+      const {sorted, skipNextSort, defaultSortDesc} = this.getResolvedState()
 
       const firstSortDirection = Object.prototype.hasOwnProperty.call(column, 'defaultSortDesc')
         ? column.defaultSortDesc
@@ -464,7 +562,7 @@ export default Base =>
         return
       }
 
-      const { onSortedChange } = this.props
+      const {onSortedChange} = this.props
 
       let newSorted = _.clone(sorted || []).map(d => {
         d.desc = _.isSortingDesc(d)
@@ -549,8 +647,8 @@ export default Base =>
     }
 
     filterColumn (column, value) {
-      const { filtered } = this.getResolvedState()
-      const { onFilteredChange } = this.props
+      const {filtered} = this.getResolvedState()
+      const {onFilteredChange} = this.props
 
       // Remove old filter first if it exists
       const newFiltering = (filtered || []).filter(x => x.id !== column.id)
@@ -606,8 +704,8 @@ export default Base =>
 
     resizeColumnMoving (event) {
       event.stopPropagation()
-      const { onResizedChange } = this.props
-      const { resized, currentlyResizing } = this.getResolvedState()
+      const {onResizedChange} = this.props
+      const {resized, currentlyResizing} = this.getResolvedState()
 
       // Delete old value
       const newResized = resized.filter(x => x.id !== currentlyResizing.id)
