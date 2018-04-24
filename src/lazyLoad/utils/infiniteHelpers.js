@@ -18,14 +18,17 @@ function createInfiniteComputer(elementHeight, data) {
 // The window is the block with any preloadAdditionalHeight
 // added to it.
 function recomputeApertureStateFromOptionsAndScrollTop(
-	{ preloadBatchSize, preloadAdditionalHeight, infiniteComputer },
-	scrollTop,
+  { preloadBatchSize, preloadAdditionalHeight, infiniteComputer },
+  scrollTop
 ) {
-	let blockNumber = preloadBatchSize === 0 ? 0 : Math.floor(scrollTop / preloadBatchSize),
-		blockStart = preloadBatchSize * blockNumber,
-		blockEnd = blockStart + preloadBatchSize,
-		apertureTop = Math.max(0, blockStart - preloadAdditionalHeight),
-		apertureBottom = Math.min(infiniteComputer.getTotalScrollableHeight(), blockEnd + preloadAdditionalHeight);
+  console.log('IC', infiniteComputer);
+  const blockNumber = preloadBatchSize === 0 ? 0 : Math.floor(scrollTop / preloadBatchSize)
+  const blockStart = preloadBatchSize * blockNumber
+  const blockEnd = blockStart + preloadBatchSize
+  const apertureTop = Math.max(0, blockStart - preloadAdditionalHeight)
+  const apertureBottom = Math.min(
+    infiniteComputer.getTotalScrollableHeight(), blockEnd + preloadAdditionalHeight
+  )
 
 	return {
 		displayIndexStart: infiniteComputer.getDisplayIndexStart(apertureTop),
@@ -33,7 +36,7 @@ function recomputeApertureStateFromOptionsAndScrollTop(
 	};
 }
 
-function generateComputedProps(props) {
+function generateInfiniteProps(props) {
 	// These are extracted so their type definitions do not conflict.
 	let {
 		containerHeight,
@@ -70,6 +73,6 @@ function buildHeightStyle(height) {
 export default {
 	createInfiniteComputer,
 	recomputeApertureStateFromOptionsAndScrollTop,
-	generateComputedProps,
+  generateInfiniteProps,
 	buildHeightStyle,
 };

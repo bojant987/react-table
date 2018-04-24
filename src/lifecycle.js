@@ -1,3 +1,6 @@
+import pick from 'lodash.pick'
+import omit from 'lodash.omit'
+
 export default Base =>
   class extends Base {
     componentWillMount () {
@@ -9,15 +12,28 @@ export default Base =>
     }
 
     componentWillReceiveProps (nextProps, nextState) {
+      const infiniteProps = [
+        'preloadBatchSize',
+        'preloadAdditionalHeight',
+        'styles',
+        'infiniteComputer',
+        'dataLength',
+        'displayIndexStart',
+        'displayIndexEnd',
+        'elementHeight',
+        'containerHeight',
+        'isScrolling',
+        'scrollTimeout'
+      ]
+
       const oldState = this.getResolvedState()
-      let nextInternalState = this.recomputeInternalStateFromProps(nextProps) //
-      const newState = {
-        ...this.getResolvedState(nextProps, nextState),
-        ...nextInternalState.newState,
-      }
-      this.computedProps = nextInternalState.computedProps //
-      this.utils = nextInternalState.utils //
-      // this.setState(nextInternalState.newState) //
+      const newState = omit(this.getResolvedState(nextProps, nextState), infiniteProps)
+      let nextInfiniteState = pick(
+        this.recomputeInfiniteStateFromProps(nextProps),
+        infiniteProps
+      ) //
+      this.infiniteProps = this.recomputeInfiniteStateFromProps(nextProps).infiniteProps //
+      this.setState(nextInfiniteState) //
 
       // Do a deep compare of new and old `defaultOption` and
       // if they are different reset `option = defaultOption`
@@ -49,12 +65,11 @@ export default Base =>
         oldState.columns !== newState.columns ||
         oldState.pivotBy !== newState.pivotBy ||
         oldState.sorted !== newState.sorted ||
-        oldState.filtered !== newState.filtered ||
-        oldState.displayIndexStart !== newState.displayIndexStart ||
-        oldState.displayIndexEnd !== newState.displayIndexEnd
+        oldState.filtered !== newState.filtered
       ) {
         this.setStateWithData(this.getDataModel(newState))
       }
+      this.setState(newState, () => { console.log('QQ') }) //
     }
 
     setStateWithData (newState, cb) {

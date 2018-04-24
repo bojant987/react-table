@@ -6,98 +6,79 @@ const timeScrollStateLastsForAfterUserScrolls = 150
 
 export default Base =>
   class extends Base {
-    generateComputedUtilityFunctions () { //
-      let utilities = {}
-
-      utilities.nodeScrollListener = this.infiniteHandleScroll
-      utilities.getScrollTop = () => {
-        return this.scrollable ? this.scrollable.scrollTop : 0
+    getScrollTop () {
+      return this.scrollable ? this.scrollable.scrollTop : 0
+    }
+    scrollShouldBeIgnored (event) {
+      return event.target !== this.scrollable
+    }
+    buildScrollableStyle () {
+      return {
+        height: this.infiniteProps.containerHeight,
+        overflowX: 'hidden',
+        overflowY: 'scroll',
+        WebkitOverflowScrolling: 'touch'
       }
-
-      utilities.setScrollTop = top => {
-        if (this.scrollable) {
-          this.scrollable.scrollTop = top
-        }
-      }
-      utilities.scrollShouldBeIgnored = event => event.target !== this.scrollable
-
-      utilities.buildScrollableStyle = () => {
-        return Object.assign(
-          {},
-          {
-            height: this.computedProps.containerHeight,
-            overflowX: 'hidden',
-            overflowY: 'scroll',
-            WebkitOverflowScrolling: 'touch'
-          }, this.computedProps.styles.scrollableStyle || {}
-        )
-      }
-
-      return utilities
     }
 
-    recomputeInternalStateFromProps (props) { //
-      let computedProps = infiniteHelpers.generateComputedProps(props)
-      let utils = this.generateComputedUtilityFunctions()
+    recomputeInfiniteStateFromProps (props) { //
+      let infiniteProps = infiniteHelpers.generateInfiniteProps(props)
 
       let newState = {}
 
-      newState.dataLength = computedProps.data.length
+      newState.dataLength = infiniteProps.data.length
       newState.infiniteComputer = infiniteHelpers.createInfiniteComputer(
-        computedProps.elementHeight,
-        computedProps.data
+        infiniteProps.elementHeight,
+        infiniteProps.data
       )
 
-      newState.preloadBatchSize = computedProps.preloadBatchSize
-      newState.preloadAdditionalHeight = computedProps.preloadAdditionalHeight
+      newState.preloadBatchSize = infiniteProps.preloadBatchSize
+      newState.preloadAdditionalHeight = infiniteProps.preloadAdditionalHeight
 
       newState = Object.assign(
         newState,
-        infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(newState, utils.getScrollTop())
+        infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(newState, this.getScrollTop())
       )
 
       return {
-        computedProps,
-        utils,
+        infiniteProps,
         newState
       }
     }
 
     infiniteHandleScroll (e) { //
-      if (this.utils.scrollShouldBeIgnored(e)) {
+      if (this.scrollShouldBeIgnored(e)) {
         return
       }
 
-      this.handleScroll(this.utils.getScrollTop())
+      this.handleScroll(this.getScrollTop())
     }
 
     manageScrollTimeouts () {
-      // Maintains a series of timeouts to set this.state.isScrolling
-      // to be true when the element is scrolling.
-
       if (this.state.scrollTimeout) {
         clearTimeout(this.state.scrollTimeout)
       }
 
-      let that = this
+      // let that = this
       let scrollTimeout = setTimeout(() => {
-        that.setState({
+        this.setState({
           isScrolling: false,
-          scrollTimeout: undefined
+          scrollTimeout: null
         })
       }, timeScrollStateLastsForAfterUserScrolls)
 
       this.setState({
         isScrolling: true,
-        scrollTimeout: scrollTimeout
+        scrollTimeout
       })
     }
     handleScroll (scrollTop) {
-      this.manageScrollTimeouts();
-
+      this.manageScrollTimeouts()
+      // if (this.state.isScrolling) { // ????????
+      //   return
+      // }
       let newApertureState = infiniteHelpers.recomputeApertureStateFromOptionsAndScrollTop(this.state, scrollTop)
-      // this.props.onVisibleChange(newApertureState);
-      this.setState(Object.assign({}, newApertureState))
+      this.setState(newApertureState)
     };
 
     getResolvedState (props, state) {

@@ -43,7 +43,9 @@
     "docs:build": "yarn build && cd docs && yarn && yarn build"
   },
   "dependencies": {
-    "classnames": "^2.2.5"
+    "classnames": "^2.2.5",
+    "lodash.omit": "^4.5.0",
+    "lodash.pick": "^4.4.0"
   },
   "peerDependencies": {
     "react": "^15.x.x || ^16.x.x"

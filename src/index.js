@@ -33,20 +33,21 @@ export default class ReactTable extends Methods(Lifecycle(Component)) {
     this.resizeColumnStart = this.resizeColumnStart.bind(this)
     this.resizeColumnEnd = this.resizeColumnEnd.bind(this)
     this.resizeColumnMoving = this.resizeColumnMoving.bind(this)
-    this.recomputeInternalStateFromProps = this.recomputeInternalStateFromProps.bind(this)
-    this.generateComputedUtilityFunctions = this.generateComputedUtilityFunctions.bind(this)
-    this.infiniteHandleScroll = this.infiniteHandleScroll.bind(this)
-    this.manageScrollTimeouts = this.manageScrollTimeouts.bind(this)
-    this.handleScroll = this.handleScroll.bind(this)
+    this.recomputeInfiniteStateFromProps = this.recomputeInfiniteStateFromProps.bind(this) //
+    this.infiniteHandleScroll = this.infiniteHandleScroll.bind(this) //
+    this.manageScrollTimeouts = this.manageScrollTimeouts.bind(this) //
+    this.handleScroll = this.handleScroll.bind(this) //
+    this.getScrollTop = this.getScrollTop.bind(this) //
+    this.scrollShouldBeIgnored = this.scrollShouldBeIgnored.bind(this) //
+    this.buildScrollableStyle = this.buildScrollableStyle.bind(this) //
 
-    const nextInternalState = this.recomputeInternalStateFromProps(props) //
+    const nextInfiniteState = this.recomputeInfiniteStateFromProps(props) //
 
-    this.computedProps = nextInternalState.computedProps //
-    this.utils = nextInternalState.utils //
+    this.infiniteProps = nextInfiniteState.infiniteProps //
 
-    const state = nextInternalState.newState //
-    state.scrollTimeout = undefined //
-    state.isScrolling = false //
+    const infiniteState = nextInfiniteState.newState //
+    infiniteState.scrollTimeout = null //
+    infiniteState.isScrolling = false //
 
     this.state = {
       page: 0,
@@ -57,7 +58,7 @@ export default class ReactTable extends Methods(Lifecycle(Component)) {
       resized: props.defaultResized,
       currentlyResizing: false,
       skipNextSort: false,
-      ...state, //
+      ...infiniteState, //
     }
   }
 
@@ -146,29 +147,23 @@ export default class ReactTable extends Methods(Lifecycle(Component)) {
       // Sorted Data
       sortedData,
       currentlyResizing,
+      displayIndexStart,
+      displayIndexEnd,
+      isScrolling,
+      infiniteComputer
     } = resolvedState
 
-    // let displayables //
-    // if (this.state.dataLength > 1) { //
-    //   displayables = this.computedProps.children.slice(
-    //     this.state.displayIndexStart,
-    //     this.state.displayIndexEnd + 1
-    //   ) //
-    // } else {
-    //   displayables = this.computedProps.children //
-    // }
-
     let infiniteScrollStyles = {} //
-    if (this.state.isScrolling) { //
+    if (isScrolling) { //
       infiniteScrollStyles.pointerEvents = 'none'  //
     } //
 
-    let topSpacerHeight = this.state.infiniteComputer.getTopSpacerHeight(this.state.displayIndexStart) //
-    let bottomSpacerHeight = this.state.infiniteComputer.getBottomSpacerHeight(this.state.displayIndexEnd) //
-
+    let topSpacerHeight = infiniteComputer.getTopSpacerHeight(displayIndexStart) //
+    let bottomSpacerHeight = infiniteComputer.getBottomSpacerHeight(displayIndexEnd) //
+    console.log(displayIndexStart, displayIndexEnd, topSpacerHeight, bottomSpacerHeight);
     // Pagination
-    const startRow = showPagination ? pageSize * page : this.state.displayIndexStart
-    const endRow = showPagination ? startRow + pageSize : this.state.displayIndexEnd + 1
+    const startRow = showPagination ? pageSize * page : displayIndexStart
+    const endRow = showPagination ? startRow + pageSize : displayIndexEnd + 1
     let pageRows = manual
       ? resolvedData
       : sortedData.slice(startRow, endRow)
@@ -882,18 +877,18 @@ export default class ReactTable extends Methods(Lifecycle(Component)) {
               {/*{padRows.map(makePadRow)}*/}
             {/*</TbodyComponent>*/}
             <div
-              className={classnames(tBodyProps.className, this.computedProps.className)}
+              {...tBodyProps.rest}
+              className={classnames(tBodyProps.className, this.infiniteProps.className)}
               ref={c => {
                 this.scrollable = c;
               }}
               style={{
                 ...tBodyProps.style,
-                ...this.utils.buildScrollableStyle(),
+                ...this.buildScrollableStyle(),
                 minWidth: `${rowMinWidth}px`
 
               }}
-              onScroll={this.utils.nodeScrollListener}
-              {...tBodyProps.rest}
+              onScroll={this.infiniteHandleScroll}
             >
               <div
                 ref={c => {
@@ -910,7 +905,7 @@ export default class ReactTable extends Methods(Lifecycle(Component)) {
                 {/*{displayables}*/}
                 {/*{this.props.children}*/}
                 {pageRows.map((d, i) => makePageRow(d, i))}
-                {padRows.map(makePadRow)}
+                {/*{padRows.map(makePadRow)}*/}
                 <div
                   ref={c => {
                     this.bottomSpacer = c;
